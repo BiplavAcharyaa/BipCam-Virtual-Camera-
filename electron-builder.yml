@@ -1,0 +1,25 @@
+appId: com.bipcam.desktop
+productName: BipCam
+files:
+  - apps/desktop/dist/**/*
+  - apps/mobile-web/dist/**/*
+  - apps/mobile-web/public/**/*
+  - package.json
+  - packages/**/*
+  - certs/**/*
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  include: scripts/build-installer.nsh
+
+extraResources:
+  - from: native/windows-vcam/dist
+    to: native
+    filter:
+      - "**/*"

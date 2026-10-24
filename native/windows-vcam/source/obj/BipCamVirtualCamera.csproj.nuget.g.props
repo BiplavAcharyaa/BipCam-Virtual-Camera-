@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <RestoreSuccess Condition=" '$(RestoreSuccess)' == '' ">True</RestoreSuccess>
+    <RestoreTool Condition=" '$(RestoreTool)' == '' ">NuGet</RestoreTool>
+    <ProjectAssetsFile Condition=" '$(ProjectAssetsFile)' == '' ">$(MSBuildThisFileDirectory)project.assets.json</ProjectAssetsFile>
+    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
+    <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">C:\Users\KIIT\.nuget\packages\</NuGetPackageFolders>
+    <NuGetProjectStyle Condition=" '$(NuGetProjectStyle)' == '' ">PackageReference</NuGetProjectStyle>
+    <NuGetToolVersion Condition=" '$(NuGetToolVersion)' == '' ">7.0.0</NuGetToolVersion>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <SourceRoot Include="C:\Users\KIIT\.nuget\packages\" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Content Include="$(NuGetPackageRoot)directncore\1.18.0\contentFiles\any\net10.0-windows7.0\DirectN.ico" Condition="Exists('$(NuGetPackageRoot)directncore\1.18.0\contentFiles\any\net10.0-windows7.0\DirectN.ico')">
+      <NuGetPackageId>DirectNCore</NuGetPackageId>
+      <NuGetPackageVersion>1.18.0</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>DirectN.ico</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)directncore\1.18.0\contentFiles\any\net10.0-windows7.0\DirectN.png" Condition="Exists('$(NuGetPackageRoot)directncore\1.18.0\contentFiles\any\net10.0-windows7.0\DirectN.png')">
+      <NuGetPackageId>DirectNCore</NuGetPackageId>
+      <NuGetPackageVersion>1.18.0</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>DirectN.png</Link>
+    </Content>
+  </ItemGroup>
+</Project>

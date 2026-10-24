@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>BipCam</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;background:#fff;font-synthesis:none}*{box-sizing:border-box}body{margin:0;background:#f7f7f7;min-height:100vh}.shell{width:min(100%,620px);margin:0 auto;padding:22px 16px 34px}.brand{font-size:30px;font-weight:850;letter-spacing:-.045em}.sub{color:#666;font-size:13px;margin-top:4px}.card{margin-top:18px;background:#fff;border:1px solid #e7e7e7;border-radius:16px;padding:16px;box-shadow:0 8px 30px #0000000b}.label{font-size:10px;font-weight:800;letter-spacing:.14em;color:#777}.code{width:100%;padding:14px;margin-top:8px;border-radius:10px;background:#fff;border:1px solid #d8d8d8;color:#111;font-size:23px;letter-spacing:.14em;text-align:center;outline:none}.button{width:100%;padding:13px;margin-top:10px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;font-weight:750}.button.primary{background:#d71920;border-color:#d71920}.video{width:100%;aspect-ratio:16/9;object-fit:contain;background:#111;border-radius:12px;margin-top:12px}.video.portrait{aspect-ratio:9/16;max-height:62vh;width:auto;max-width:100%;display:block;margin-left:auto;margin-right:auto}.status{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:12px;color:#555}.dot{width:8px;height:8px;border-radius:50%;background:#999}.dot.ok{background:#d71920}.dot.warn{background:#e09b00}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}.select{width:100%;padding:11px;background:#fff;color:#111;border:1px solid #d8d8d8;border-radius:10px}.select.full{grid-column:1/-1}.hidden{display:none}.error{margin-top:10px;color:#a40f16;background:#fff1f1;border:1px solid #f1c7c9;padding:10px;border-radius:10px;font-size:12px}.tiny{font-size:10px;color:#777;line-height:1.5;margin-top:12px}.meter{height:8px;border-radius:99px;background:#ececec;overflow:hidden;margin-top:10px}.meter-fill{height:100%;width:0;background:#d71920;border-radius:99px;transition:width .08s linear}.section-title{margin-top:18px;font-size:13px;font-weight:800}.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.stat{padding:11px;border:1px solid #e7e7e7;border-radius:10px}.stat span{display:block;font-size:10px;color:#777}.stat strong{display:block;margin-top:3px;font-size:13px}.check{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid #e7e7e7;border-radius:10px;margin-top:10px}.check button{border:0;background:none;font-weight:800;color:#d71920}
+.note{margin-top:10px;color:#6b4a00;background:#fff8e6;border:1px solid #f0d99a;padding:10px;border-radius:10px;font-size:12px}.zoom-row{display:flex;align-items:center;gap:10px;margin-top:11px;font-size:12px;color:#555}.zoom-row input{flex:1;accent-color:#d71920}.stat.wide{grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="brand">BipCam</div>
+  <div class="sub">Turn your Android phone into a wireless webcam</div>
+  <div id="pairCard" class="card">
+    <div class="label">PAIR WITH LAPTOP</div>
+    <input id="code" class="code" inputmode="numeric" maxlength="6" placeholder="000000">
+    <button id="connect" class="button primary">Connect</button>
+    <div class="tiny">Use the six-digit code shown in the BipCam desktop app. Phone and laptop must be on the same Wi-Fi.</div>
+    <div id="pairError" class="error hidden"></div>
+  </div>
+  <div id="cameraCard" class="card hidden">
+    <div class="label">CAMERA</div>
+    <video id="preview" class="video" autoplay playsinline muted></video>
+    <div class="status"><span id="dot" class="dot"></span><span id="status">Connected</span></div>
+    <div class="grid">
+      <select id="facing" class="select"><option value="environment">Back camera</option><option value="user">Front camera</option></select>
+      <select id="lens" class="select"><option value="">Lens: Auto</option></select>
+      <select id="orientation" class="select"><option value="landscape">Landscape</option><option value="portrait">Portrait</option></select>
+      <select id="resolution" class="select"><option value="1280x720">720p</option><option value="1920x1080">1080p</option></select>
+      <select id="fps" class="select"><option value="30">30 FPS</option><option value="60">60 FPS</option></select>
+      <select id="background" class="select"><option value="off">Background Blur: Off</option><option value="blur">Background Blur: On</option></select>
+      <select id="mirror" class="select"><option value="auto">Mirror: Auto (selfie)</option><option value="on">Mirror: On</option><option value="off">Mirror: Off</option></select>
+      <select id="codec" class="select"><option value="auto">Codec: Auto (H.264)</option><option value="vp8">Codec: VP8</option><option value="vp9">Codec: VP9</option></select>
+    </div>
+    <div id="zoomRow" class="zoom-row hidden"><span>Zoom</span><input id="zoom" type="range" min="1" max="1" step="0.1" value="1"><span id="zoomLabel">1.0×</span></div>
+    <div class="status-grid">
+      <div class="stat"><span>Actual resolution</span><strong id="actualResolution">—</strong></div>
+      <div class="stat"><span>Actual FPS</span><strong id="actualFps">—</strong></div>
+      <div class="stat"><span>Microphone</span><strong id="micStatus">Connected</strong></div>
+      <div class="stat"><span>Processing</span><strong id="processingStatus">Direct video</strong></div>
+      <div class="stat wide"><span>Encoder</span><strong id="encoderStatus">—</strong></div>
+    </div>
+    <div class="section-title">Microphone level</div>
+    <div class="meter"><div id="micMeter" class="meter-fill"></div></div>
+    <div class="check"><span>Microphone active</span><button id="mute">Mute</button></div>
+    <button id="start" class="button primary">Start Camera</button>
+    <button id="stop" class="button">Stop Camera</button>
+    <button id="switch" class="button">Switch Camera</button>
+    <div id="cameraNote" class="note hidden"></div>
+    <div id="cameraError" class="error hidden"></div>
+  </div>
+</div>
+<script src="/mediapipe/selfie_segmentation.js"></script>
+<script>
+'use strict'
+const $ = id => document.getElementById(id)
+const codeInput=$('code'),connectButton=$('connect'),pairCard=$('pairCard'),cameraCard=$('cameraCard'),preview=$('preview'),statusEl=$('status'),dot=$('dot'),pairError=$('pairError'),cameraError=$('cameraError'),cameraNote=$('cameraNote'),facing=$('facing'),lens=$('lens'),orientation=$('orientation'),resolution=$('resolution'),fps=$('fps'),background=$('background'),mirror=$('mirror'),codec=$('codec'),startButton=$('start'),stopButton=$('stop'),switchButton=$('switch'),actualResolution=$('actualResolution'),actualFps=$('actualFps'),micStatus=$('micStatus'),processingStatus=$('processingStatus'),encoderStatus=$('encoderStatus'),micMeter=$('micMeter'),muteButton=$('mute'),zoomRow=$('zoomRow'),zoom=$('zoom'),zoomLabel=$('zoomLabel')
+
+let ws=null, pc=null, sessionId='', paired=false, micMuted=false
+let cameraStream=null       // raw getUserMedia stream (camera + mic)
+let pipeline=null           // active video pipeline (direct or canvas)
+let capturedKey=''          // resolution|fps|facing|lens used for the current capture
+let videoSender=null, audioSender=null
+let remoteDescriptionReady=false, pendingIce=[], negotiating=false, starting=false
+let wakeLock=null
+let segmentation=null, segmentationLoading=null, segTarget=null, segChain=Promise.resolve()
+let devices=[]              // every video input the browser exposes: {id,label,facing}
+let statsTimer=0, lastStats=null, measuredFps=0, rebuildTimer=0
+
+const params=new URLSearchParams(location.search); codeInput.value=params.get('code')||''
+try{const c=localStorage.getItem('bipcam.codec');if(c&&['auto','vp8','vp9'].includes(c))codec.value=c}catch{}
+
+function showError(el,message){el.textContent=message;el.classList.remove('hidden')}
+function clearError(el){el.classList.add('hidden');el.textContent=''}
+function setStatus(text,ok=false,warn=false){statusEl.textContent=text;dot.className='dot'+(ok?' ok':'')+(warn?' warn':'')}
+function socketUrl(){return `${location.protocol==='https:'?'wss':'ws'}://${location.host}`}
+function send(message){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(message))}
+function withTimeout(promise,ms,label){let t;return Promise.race([promise,new Promise((_,rej)=>{t=setTimeout(()=>rej(new Error(label||'Timed out')),ms)})]).finally(()=>clearTimeout(t))}
+function captureKey(){return `${resolution.value}|${fps.value}|${facing.value}|${lens.value}`}
+function wantPortrait(){return orientation.value==='portrait'}
+
+// Output size for the chosen orientation. The picture is NEVER rotated: when the phone delivers a portrait
+// frame but landscape is selected (or the other way round) a centred 16:9 / 9:16 window is cropped out of it,
+// so the image stays upright. Nothing is up-scaled: the crop keeps the sensor's native pixels.
+function orientDims(sw,sh,wantP,cap){
+  let W=sw,H=sh
+  if((sh>sw)!==wantP){
+    if(wantP){W=Math.round(sh*9/16);H=sh}else{W=sw;H=Math.round(sw*9/16)}
+  }
+  if(cap){const k=Math.min(1,cap/Math.max(W,H));W=Math.round(W*k);H=Math.round(H*k)}
+  return {W:Math.max(2,W&~1),H:Math.max(2,H&~1)}
+}
+
+/* ------------------------------------------------------------------ signalling */
+async function connect(){
+  clearError(pairError)
+  const code=codeInput.value.trim()
+  if(!/^\d{6}$/.test(code)){showError(pairError,'Enter the six-digit pairing code.');return}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showError(pairError,'This browser does not provide camera access. Use a current Android Chrome browser over HTTPS.');return}
+  setStatus('Connecting',false,true)
+  ws=new WebSocket(socketUrl())
+  ws.onopen=()=>send({type:'pair',code})
+  ws.onerror=()=>showError(pairError,'Could not connect to BipCam. Check Wi-Fi and the desktop app.')
+  ws.onclose=()=>{paired=false;setStatus('Disconnected');if(!cameraCard.classList.contains('hidden'))showError(cameraError,'Laptop connection closed.');stopStats();releaseCamera();releaseWakeLock();if(pc){try{pc.close()}catch{}pc=null;videoSender=null;audioSender=null}}
+  ws.onmessage=async event=>{
+    try{
+      const m=JSON.parse(event.data)
+      if(m.type==='pair-error'){showError(pairError,m.message);ws.close();return}
+      if(m.type==='paired'){paired=true;pairCard.classList.add('hidden');cameraCard.classList.remove('hidden');setStatus('Connected',true);refreshLenses();sendPhoneInfo();return}
+      if(m.type==='answer'&&pc){
+        if(pc.signalingState==='have-local-offer'){
+          // Raise the encoder's start/min/max bitrate in the answer we apply: on a LAN the default WebRTC ramp-up is
+          // far too timid and is the main reason 1080p looked soft.
+          let tuned=m.answer
+          try{tuned={type:'answer',sdp:boostSdp(m.answer.sdp,bitrateKbps())}}catch{}
+          try{await pc.setRemoteDescription(tuned)}catch(err){console.warn('[BIPCAM] tuned answer rejected, using the original',err);await pc.setRemoteDescription(m.answer)}
+          remoteDescriptionReady=true
+          for(const c of pendingIce.splice(0))await pc.addIceCandidate(c).catch(()=>{})
+        }
+        return
+      }
+      if(m.type==='ice'&&pc&&m.candidate){if(remoteDescriptionReady)await pc.addIceCandidate(m.candidate).catch(()=>{});else pendingIce.push(m.candidate);return}
+      if(m.type==='camera-start'){applySettings(m.value||{});await startCamera();return}
+      if(m.type==='camera-stop'){stopCamera();return}
+      if(m.type==='camera-switch'){await switchCamera();return}
+      if(m.type==='microphone-mute'){setMuted(Boolean(m.value?.muted));return}
+      if(m.type==='settings'&&m.value){
+        const before=captureKey()
+        applySettings(m.value)
+        if(cameraStream){ if(captureKey()!==before) await startCamera(); else await applyProcessing() }
+      }
+    }catch(error){showError(cameraError,'Invalid control message received.');console.error(error)}
+  }
+}
+function applySettings(value){
+  if(value.resolution&&['1280x720','1920x1080'].includes(value.resolution))resolution.value=value.resolution
+  if(value.fps&&['30','60'].includes(String(value.fps)))fps.value=String(value.fps)
+  if(value.orientation&&['landscape','portrait'].includes(value.orientation))orientation.value=value.orientation
+  if(value.background&&['off','blur'].includes(value.background))background.value=value.background
+  if(value.mirror&&['auto','on','off'].includes(value.mirror))mirror.value=value.mirror
+}
+
+/* ------------------------------------------------------------------ cameras / lenses */
+function guessFacing(label){
+  const l=(label||'').toLowerCase()
+  if(/front|user|selfie/.test(l))return 'user'
+  if(/back|rear|environment/.test(l))return 'environment'
+  return ''
+}
+// Lists every camera Chrome exposes. Labels are only filled in after camera permission has been granted, so this is
+// refreshed after each capture. Phones with several back cameras (wide / ultra-wide / tele) show up as
+// "Back camera 1, 2, 3 ..." in the Lens menu.
+async function refreshLenses(){
+  try{
+    const all=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput'&&d.deviceId)
+    devices=all.map(d=>({id:d.deviceId,label:d.label||'',facing:guessFacing(d.label)}))
+  }catch{devices=[]}
+  const active=cameraStream&&cameraStream.getVideoTracks()[0]
+  const activeId=active&&active.getSettings&&active.getSettings().deviceId
+  const activeFacing=active&&active.getSettings&&active.getSettings().facingMode
+  if(activeId&&activeFacing){const d=devices.find(x=>x.id===activeId);if(d&&!d.facing)d.facing=activeFacing}
+  const previous=lens.value
+  const list=devices.filter(d=>d.facing===facing.value)
+  lens.innerHTML=''
+  const auto=document.createElement('option');auto.value='';auto.textContent='Lens: Auto';lens.appendChild(auto)
+  list.forEach((d,i)=>{
+    const o=document.createElement('option');o.value=d.id
+    const short=(d.label||'').replace(/,?\s*facing\s+(front|back)/i,'').trim()
+    o.textContent=`${facing.value==='user'?'Front':'Back'} camera ${i+1}${short?' · '+short:''}`
+    lens.appendChild(o)
+  })
+  lens.value=list.some(d=>d.id===previous)?previous:''
+}
+function cameraName(){
+  if(lens.value&&lens.selectedOptions[0])return lens.selectedOptions[0].textContent.split(' · ')[0]
+  return facing.value==='user'?'Front camera':'Back camera'
+}
+function sendPhoneInfo(){send({type:'phone-info',facingMode:facing.value,name:cameraName()})}
+if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener)navigator.mediaDevices.addEventListener('devicechange',()=>refreshLenses())
+
+/* ------------------------------------------------------------------ capture */
+function constraintCandidates(){
+  const [w,h]=resolution.value.split('x').map(Number)
+  const f=Number(fps.value)
+  // Always ask for the sensor's native landscape size; orientation is handled by the pipeline below
+  // (Android Chrome may hand back portrait- or landscape-sized frames depending on how the phone is held).
+  // 1st try is STRICT (at least this size and this frame rate) so the browser cannot quietly pick a 30 FPS mode
+  // when 60 was asked for; the following tries relax step by step.
+  const list=[
+    {width:{min:w,ideal:w},height:{min:h,ideal:h},frameRate:{min:f>30?f:24,ideal:f}},
+    {width:{ideal:w},height:{ideal:h},frameRate:{ideal:f}}
+  ]
+  if(f>30)list.push({width:{ideal:w},height:{ideal:h},frameRate:{ideal:30}})
+  list.push({width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},{})
+  return list
+}
+async function captureCamera(){
+  let lastError=null
+  const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+  const picks=lens.value?[{deviceId:{exact:lens.value}},{facingMode:{ideal:facing.value}}]:[{facingMode:{ideal:facing.value}}]
+  for(const pick of picks){
+    for(const video of constraintCandidates()){
+      try{return await navigator.mediaDevices.getUserMedia({video:{...video,...pick},audio})}
+      catch(error){lastError=error;if(error&&error.name==='NotAllowedError')throw error}
+    }
+    if(pick.deviceId){lens.value='';showError(cameraError,'That lens is not available. Using the default camera.')}
+  }
+  throw lastError||new Error('Camera unavailable')
+}
+function actualFacing(track){return (track&&track.getSettings&&track.getSettings().facingMode)||facing.value}
+function mirrorActive(track){return mirror.value==='on'||(mirror.value==='auto'&&actualFacing(track)==='user')}
+
+function setupZoom(track){
+  zoomRow.classList.add('hidden')
+  try{
+    const caps=track.getCapabilities&&track.getCapabilities()
+    if(!caps||!caps.zoom||!(caps.zoom.max>caps.zoom.min))return
+    zoom.min=caps.zoom.min;zoom.max=caps.zoom.max;zoom.step=caps.zoom.step||0.1
+    const cur=(track.getSettings&&track.getSettings().zoom)||caps.zoom.min
+    zoom.value=cur;zoomLabel.textContent=Number(cur).toFixed(1)+'×'
+    zoomRow.classList.remove('hidden')
+  }catch{}
+}
+zoom.oninput=async()=>{
+  const track=cameraStream&&cameraStream.getVideoTracks()[0];if(!track)return
+  zoomLabel.textContent=Number(zoom.value).toFixed(1)+'×'
+  try{await track.applyConstraints({advanced:[{zoom:Number(zoom.value)}]})}
+  catch(error){zoomRow.classList.add('hidden');showError(cameraError,'Zoom is not available on this camera.')}
+}
+
+/* ------------------------------------------------------------------ background blur engine */
+async function ensureSegmentation(){
+  if(segmentation)return segmentation
+  if(segmentationLoading)return segmentationLoading
+  if(typeof SelfieSegmentation==='undefined')throw new Error('Blur engine failed to load')
+  segmentationLoading=(async()=>{
+    const s=new SelfieSegmentation({locateFile:file=>`/mediapipe/${file}`})
+    s.setOptions({modelSelection:1,selfieMode:false})
+    s.onResults(results=>{const p=segTarget;if(p&&p.active&&p.onResults)p.onResults(results)})
+    await withTimeout(s.initialize(),25000,'Blur model timed out while loading')
+    segmentation=s
+    return s
+  })()
+  try{return await segmentationLoading}finally{segmentationLoading=null}
+}
+
+// MediaPipe is a singleton: serialise send() calls so two pipelines (old + new during a swap) never interleave
+// and every result is routed to the pipeline that produced it.
+function segmentFrame(p,video){
+  const run=async()=>{if(!p.active)return;segTarget=p;await withTimeout(segmentation.send({image:video}),5000,'Segmentation stalled')}
+  const r=segChain.then(run,run)
+  segChain=r.catch(()=>{})
+  return r
+}
+
+/* ------------------------------------------------------------------ video pipeline */
+function drawCover(ctx,img,sw,sh,dw,dh,flip){
+  // Draws img centred + "cover"-scaled into dw x dh (centre crop), optionally mirrored. Never rotates.
+  ctx.save()
+  ctx.translate(dw/2,dh/2)
+  if(flip)ctx.scale(-1,1)
+  const k=Math.max(dw/sw,dh/sh)
+  ctx.drawImage(img,-sw*k/2,-sh*k/2,sw*k,sh*k)
+  ctx.restore()
+}
+function makeCanvas(w,h,alpha){const c=document.createElement('canvas');c.width=w;c.height=h;return {canvas:c,ctx:c.getContext('2d',{alpha:alpha!==false})}}
+function queueRebuild(){clearTimeout(rebuildTimer);rebuildTimer=setTimeout(()=>{if(cameraStream&&!starting)applyProcessing()},450)}
+
+async function createPipeline(stream){
+  const track=stream.getVideoTracks()[0]
+  const audio=stream.getAudioTracks()
+  const settings=track.getSettings()
+  const blur=background.value==='blur'
+  const flip=mirrorActive(track)
+  const wantP=wantPortrait()
+  const srcP=(settings.height||0)>(settings.width||0)
+  const cropNeeded=wantP!==srcP
+  const labels=[]
+  if(blur)labels.push('Background blur')
+  if(flip)labels.push('Mirror')
+  if(cropNeeded)labels.push(wantP?'Crop to portrait':'Crop to landscape')
+
+  if(!blur&&!flip&&!cropNeeded){
+    // Best case: the camera frames go to the encoder untouched (full resolution, full frame rate).
+    processingStatus.textContent='Direct video'
+    try{track.contentHint=Number(fps.value)>30?'motion':''}catch{}
+    return {active:true,direct:true,srcP,stream:new MediaStream([track,...audio]),width:settings.width||0,height:settings.height||0,label:'Direct video',stop(){this.active=false}}
+  }
+
+  if(blur){
+    try{await ensureSegmentation()}catch(error){console.error('[BIPCAM] blur unavailable',error);showError(cameraError,'Background blur is unavailable ('+error.message+'). Sending normal video instead.')}
+  }
+
+  const {W,H}=orientDims(settings.width||1280,settings.height||720,wantP,blur?1280:0)
+  const out=makeCanvas(W,H,false)
+  const video=document.createElement('video')
+  video.muted=true;video.playsInline=true;video.autoplay=true
+  video.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none'
+  document.body.appendChild(video)
+  video.srcObject=new MediaStream([track])
+  await video.play().catch(()=>{})
+
+  const p={active:true,direct:false,srcP,blurFailed:!(blur&&segmentation),width:W,height:H,label:labels.join(' + '),stream:null,raf:0,
+    stop(){this.active=false;if(segTarget===this)segTarget=null;if(this.raf&&video.cancelVideoFrameCallback)try{video.cancelVideoFrameCallback(this.raf)}catch{}
+      cancelAnimationFrame(this.raf);video.pause();video.srcObject=null;video.remove()
+      this.stream&&this.stream.getVideoTracks().forEach(t=>t.stop())},
+    drawPlain(){const vw=video.videoWidth||settings.width||1280,vh=video.videoHeight||settings.height||720;out.ctx.globalCompositeOperation='source-over';out.ctx.imageSmoothingQuality='high';drawCover(out.ctx,video,vw,vh,W,H,flip)}
+  }
+  // The phone was turned: the source flipped between portrait and landscape, so re-plan the crop.
+  video.addEventListener('resize',()=>{if(p.active&&video.videoWidth&&(video.videoHeight>video.videoWidth)!==srcP)queueRebuild()})
+
+  if(blur&&!segmentation)p.label=labels.filter(l=>l!=='Background blur').join(' + ')||'Direct video'
+  if(blur&&segmentation){
+    const bg=makeCanvas(Math.max(2,W>>3),Math.max(2,H>>3));bg.ctx.filter='blur(2px)'
+    const mask=makeCanvas(Math.max(2,W>>2),Math.max(2,H>>2));mask.ctx.filter='blur(2px)'
+    const person=makeCanvas(W,H,true)
+    p.onResults=results=>{
+      const img=results.image,m=results.segmentationMask
+      const iw=img.videoWidth||img.width||video.videoWidth,ih=img.videoHeight||img.height||video.videoHeight
+      // 1. blurred background: draw a tiny copy and stretch it (cheap, strong blur)
+      bg.ctx.globalCompositeOperation='source-over';drawCover(bg.ctx,img,iw,ih,bg.canvas.width,bg.canvas.height,flip)
+      out.ctx.globalCompositeOperation='source-over';out.ctx.imageSmoothingEnabled=true
+      out.ctx.drawImage(bg.canvas,0,0,W,H)
+      // 2. person cut-out = sharp frame masked by the (feathered) segmentation mask
+      mask.ctx.clearRect(0,0,mask.canvas.width,mask.canvas.height)
+      drawCover(mask.ctx,m,m.width||iw,m.height||ih,mask.canvas.width,mask.canvas.height,flip)
+      person.ctx.globalCompositeOperation='source-over';person.ctx.clearRect(0,0,W,H)
+      person.ctx.drawImage(mask.canvas,0,0,W,H)
+      person.ctx.globalCompositeOperation='source-in'
+      drawCover(person.ctx,img,iw,ih,W,H,flip)
+      person.ctx.globalCompositeOperation='source-over'
+      // 3. person over blurred background
+      out.ctx.drawImage(person.canvas,0,0)
+    }
+  }
+
+  const schedule=fn=>{ if(!p.active)return; if(video.requestVideoFrameCallback)p.raf=video.requestVideoFrameCallback(()=>fn()); else p.raf=requestAnimationFrame(()=>fn()) }
+  const tick=async()=>{
+    if(!p.active)return
+    try{
+      if(video.readyState>=2&&video.videoWidth){
+        if(!p.blurFailed){
+          await segmentFrame(p,video)
+        }else p.drawPlain()
+      }
+    }catch(error){
+      // NEVER stop the outgoing track on a blur failure: fall back to plain video and keep streaming.
+      console.error('[BIPCAM] segmentation failed, continuing without blur',error)
+      p.blurFailed=true
+      showError(cameraError,'Background blur stopped ('+error.message+'). Sending normal video.')
+      processingStatus.textContent=labels.filter(l=>l!=='Background blur').join(' + ')||'Direct video'
+    }
+    schedule(tick)
+  }
+  p.drawPlain()
+  const captured=out.canvas.captureStream(Math.min(Number(fps.value)||30,blur?30:60))
+  const outTrack=captured.getVideoTracks()[0]
+  try{outTrack.contentHint=Number(fps.value)>30?'motion':'detail'}catch{}
+  p.stream=new MediaStream([outTrack,...audio])
+  processingStatus.textContent=blur&&!p.blurFailed?'Background blur'+(flip?' + Mirror':''):labels.filter(l=>l!=='Background blur').join(' + ')||'Direct video'
+  schedule(tick)
+  return p
+}
+
+/* ------------------------------------------------------------------ WebRTC */
+// kbit/s. Generous on purpose: this is a LAN link and a webcam picture needs far more than the WebRTC default.
+function bitrateKbps(){
+  const big=resolution.value==='1920x1080',hi=Number(fps.value)>30
+  return big?(hi?20000:12000):(hi?10000:6000)
+}
+// Adds x-google-{min,start,max}-bitrate to every real video codec in an SDP so the encoder starts high and never
+// ramps down to a blurry trickle.
+function boostSdp(sdp,maxKbps){
+  const extra=`x-google-min-bitrate=${Math.round(maxKbps*0.25)};x-google-start-bitrate=${Math.round(maxKbps*0.6)};x-google-max-bitrate=${maxKbps}`
+  const lines=sdp.split(/\r?\n/)
+  const media=new Set(),hasFmtp=new Set()
+  let section=''
+  for(const l of lines){
+    if(l.startsWith('m='))section=l.slice(2).split(' ')[0]
+    if(section!=='video')continue
+    const r=l.match(/^a=rtpmap:(\d+) (H264|VP8|VP9|AV1|H265)\//i);if(r)media.add(r[1])
+    const f=l.match(/^a=fmtp:(\d+) /);if(f)hasFmtp.add(f[1])
+  }
+  const result=[]
+  section=''
+  for(const l of lines){
+    let line=l
+    if(line.startsWith('m='))section=line.slice(2).split(' ')[0]
+    if(section==='video'){
+      const f=line.match(/^a=fmtp:(\d+) (.*)$/)
+      if(f&&media.has(f[1])&&!/x-google-max-bitrate/.test(f[2]))line=`${line};${extra}`
+    }
+    result.push(line)
+    if(section==='video'){
+      const r=l.match(/^a=rtpmap:(\d+) /)
+      if(r&&media.has(r[1])&&!hasFmtp.has(r[1]))result.push(`a=fmtp:${r[1]} ${extra}`)
+    }
+  }
+  return result.join('\r\n')
+}
+// Prefer H.264 (hardware-encoded on the phone, so 1080p60 is possible without cooking the CPU), then VP8 / VP9.
+function preferCodec(){
+  try{
+    if(!pc||!videoSender)return
+    const tr=pc.getTransceivers().find(t=>t.sender===videoSender)
+    const caps=window.RTCRtpSender&&RTCRtpSender.getCapabilities&&RTCRtpSender.getCapabilities('video')
+    if(!tr||!tr.setCodecPreferences||!caps)return
+    const want=codec.value==='auto'?'h264':codec.value
+    const rank=c=>{
+      const m=c.mimeType.toLowerCase()
+      if(/rtx|red|ulpfec|flexfec/.test(m))return 9
+      if(m==='video/'+want){
+        if(want!=='h264')return 0
+        const f=(c.sdpFmtpLine||'').toLowerCase()
+        if(f.includes('profile-level-id=640c'))return 0
+        if(f.includes('packetization-mode=1'))return 1
+        return 2
+      }
+      if(m==='video/vp8')return 5
+      if(m==='video/vp9')return 6
+      return 7
+    }
+    tr.setCodecPreferences([...caps.codecs].sort((a,b)=>rank(a)-rank(b)))
+  }catch(error){console.warn('[BIPCAM] codec preference skipped',error)}
+}
+function resetPeer(){
+  stopStats()
+  if(pc){try{pc.close()}catch{}}
+  pc=null;videoSender=null;audioSender=null;remoteDescriptionReady=false;pendingIce=[]
+}
+function createPeer(){
+  pendingIce=[];remoteDescriptionReady=false;videoSender=null;audioSender=null
+  sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36)
+  pc=new RTCPeerConnection({iceServers:[]})
+  pc.onicecandidate=e=>{if(e.candidate)send({type:'ice',candidate:e.candidate})}
+  pc.onnegotiationneeded=()=>negotiate()
+  pc.onconnectionstatechange=()=>{
+    if(pc.connectionState==='connected'){setStatus('Streaming',true);if(videoSender)tuneSender(videoSender)}
+    if(['failed','disconnected'].includes(pc.connectionState))setStatus('WebRTC connection lost',false,true)
+  }
+}
+async function negotiate(){
+  if(!pc||negotiating)return
+  negotiating=true
+  try{
+    const offer=await pc.createOffer()
+    if(pc.signalingState!=='stable')return
+    await pc.setLocalDescription(offer)
+    send({type:'offer',offer:{type:offer.type,sdp:offer.sdp},session:sessionId})
+  }finally{negotiating=false}
+}
+async function tuneSender(sender){
+  try{
+    const p=sender.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}]
+    const e=p.encodings[0]
+    e.maxBitrate=bitrateKbps()*1000
+    e.maxFramerate=Number(fps.value)
+    e.scaleResolutionDownBy=1
+    try{e.priority='high';e.networkPriority='high'}catch{}
+    p.degradationPreference='maintain-framerate'
+    await sender.setParameters(p)
+  }catch(error){console.warn('[BIPCAM] sender tuning skipped',error)}
+}
+
+// Real numbers instead of the requested ones: frames actually encoded per second, bitrate, codec, and why (if at all)
+// the browser is holding quality back.
+function stopStats(){clearInterval(statsTimer);statsTimer=0;lastStats=null;measuredFps=0}
+function startStats(){
+  if(statsTimer)return
+  statsTimer=setInterval(async()=>{
+    if(!pc||!videoSender||!cameraStream)return
+    try{
+      const report=await pc.getStats()
+      let out=null;const codecs={}
+      report.forEach(s=>{if(s.type==='outbound-rtp'&&s.kind==='video'&&!s.isRemote)out=s;if(s.type==='codec')codecs[s.id]=s.mimeType})
+      if(!out)return
+      const now=performance.now()
+      let kbps=0
+      if(lastStats&&out.framesEncoded>=lastStats.frames&&now>lastStats.t){
+        const sec=(now-lastStats.t)/1000
+        measuredFps=(out.framesEncoded-lastStats.frames)/sec
+        kbps=(out.bytesSent-lastStats.bytes)*8/sec/1000
+      }
+      lastStats={t:now,frames:out.framesEncoded,bytes:out.bytesSent}
+      if(measuredFps>0)actualFps.textContent=`${measuredFps.toFixed(1)} FPS`
+      const name=(codecs[out.codecId]||'').replace('video/','')
+      const limit=out.qualityLimitationReason&&out.qualityLimitationReason!=='none'?` · limited by ${out.qualityLimitationReason}`:''
+      const size=out.frameWidth&&out.frameHeight?`${out.frameWidth}×${out.frameHeight}`:''
+      encoderStatus.textContent=[name,size,kbps?`${(kbps/1000).toFixed(1)} Mbps`:''].filter(Boolean).join(' · ')+limit||'—'
+    }catch{}
+  },1000)
+}
+function sendMediaInfo(){
+  const audio=cameraStream&&cameraStream.getAudioTracks()[0]
+  const vt=pipeline&&pipeline.stream&&pipeline.stream.getVideoTracks()[0]
+  const s=(vt&&vt.getSettings&&vt.getSettings())||{}
+  const w=pipeline&&pipeline.width||s.width||0,h=pipeline&&pipeline.height||s.height||0
+  actualResolution.textContent=w&&h?`${w}×${h}`:'Unknown'
+  if(!measuredFps)actualFps.textContent=s.frameRate?`${Number(s.frameRate).toFixed(1)} FPS`:'Requested '+fps.value+' FPS'
+  micStatus.textContent=audio?(micMuted?'Muted':'Connected'):'Unavailable'
+  preview.classList.toggle('portrait',h>w)
+  send({type:'phone-media-info',value:{width:w,height:h,frameRate:measuredFps||s.frameRate||0,microphone:!!audio,microphoneMuted:micMuted,orientation:orientation.value,background:pipeline&&pipeline.label.includes('blur')?'blur':'off',mirror:mirror.value,processing:pipeline?pipeline.label:'Direct video'}})
+}
+
+/* ------------------------------------------------------------------ camera lifecycle */
+function releaseCamera(){
+  clearTimeout(rebuildTimer)
+  if(pipeline){pipeline.stop();pipeline=null}
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
+  preview.srcObject=null
+  zoomRow.classList.add('hidden')
+}
+async function keepAwake(){
+  try{if('wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}
+}
+function releaseWakeLock(){try{wakeLock&&wakeLock.release()}catch{};wakeLock=null}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cameraStream)keepAwake()})
+
+// Direct video (no canvas): if the phone is turned while streaming, the track itself changes shape.
+preview.addEventListener('resize',()=>{
+  if(pipeline&&pipeline.direct&&preview.videoWidth&&(preview.videoHeight>preview.videoWidth)!==pipeline.srcP)queueRebuild()
+})
+
+async function pushPipeline(){
+  // Builds the new pipeline FIRST, swaps it into the existing WebRTC sender (no renegotiation, same connection),
+  // and only then tears the previous pipeline down - so the stream never blinks out or drops.
+  const next=await createPipeline(cameraStream)
+  const previous=pipeline
+  pipeline=next
+  preview.srcObject=next.stream
+  if(!pc)createPeer()
+  const vTrack=next.stream.getVideoTracks()[0]
+  if(!videoSender){videoSender=pc.addTrack(vTrack,next.stream);preferCodec()}else await videoSender.replaceTrack(vTrack)
+  const aTrack=cameraStream.getAudioTracks()[0]
+  if(aTrack){aTrack.enabled=!micMuted;if(!audioSender)audioSender=pc.addTrack(aTrack,next.stream);else if(audioSender.track!==aTrack)await audioSender.replaceTrack(aTrack)}
+  if(previous&&previous!==next)previous.stop()
+  tuneSender(videoSender)
+  startStats()
+  sendMediaInfo()
+  setStatus('Streaming',true)
+}
+function describeCapture(track){
+  // Tells the user honestly when the camera cannot do what was asked instead of silently showing the request.
+  const s=track.getSettings(),notes=[]
+  const wantF=Number(fps.value),[rw,rh]=resolution.value.split('x').map(Number)
+  if(s.width&&s.height&&Math.max(s.width,s.height)<Math.max(rw,rh)*0.95)notes.push(`This camera gave ${s.width}×${s.height} instead of ${rw}×${rh}.`)
+  if(wantF>30&&s.frameRate&&s.frameRate<wantF-4)notes.push(`This camera only delivers ${Math.round(s.frameRate)} FPS at ${s.width}×${s.height}. Try 720p for 60 FPS, or another lens.`)
+  if(notes.length)showError(cameraNote,notes.join(' '));else clearError(cameraNote)
+}
+async function startCamera(){
+  if(starting)return
+  starting=true
+  clearError(cameraError);clearError(cameraNote)
+  try{
+    // Android allows one active capture per camera: release the old one before opening a new one.
+    releaseCamera()
+    resetMeasured()
+    setStatus('Starting camera',false,true)
+    cameraStream=await captureCamera()
+    capturedKey=captureKey()
+    const track=cameraStream.getVideoTracks()[0]
+    track.addEventListener('ended',()=>{if(cameraStream&&!starting){setStatus('Camera stopped by the phone',false,true);showError(cameraError,'The phone stopped the camera (screen locked or app switched). Keep this page open and the screen on, then press Start Camera.')}})
+    await refreshLenses()
+    setupZoom(track)
+    describeCapture(track)
+    await pushPipeline()
+    sendPhoneInfo()
+    keepAwake()
+  }catch(error){
+    console.error('[BIPCAM] camera start failed',error)
+    showError(cameraError,error?.name==='NotAllowedError'?'Camera or microphone permission was denied.':error?.name==='OverconstrainedError'?'Requested camera mode is unavailable on this phone.':error?.name==='NotReadableError'?'The camera is in use by another app.':'Unable to start the camera.')
+    setStatus('Camera unavailable',false,true)
+    releaseCamera()
+  }finally{starting=false}
+}
+function resetMeasured(){measuredFps=0;lastStats=null}
+async function applyProcessing(){
+  // Blur / mirror / orientation changes: keep the camera open, only rebuild the processing pipeline.
+  if(!cameraStream||starting)return
+  starting=true
+  clearError(cameraError)
+  try{await pushPipeline()}
+  catch(error){console.error('[BIPCAM] pipeline change failed',error);showError(cameraError,'Could not apply that setting: '+error.message)}
+  finally{starting=false}
+}
+function stopCamera(){
+  releaseCamera();releaseWakeLock();stopStats()
+  setStatus(paired?'Connected':'Disconnected',paired)
+  actualResolution.textContent='—';actualFps.textContent='—';processingStatus.textContent='Direct video';encoderStatus.textContent='—'
+  clearError(cameraNote)
+  send({type:'camera-stopped'})
+}
+// Steps through EVERY camera the phone exposes (back 1, back 2, back 3 ..., then front), not just front <-> back.
+async function switchCamera(){
+  await refreshLenses()
+  const ordered=[...devices.filter(d=>d.facing==='environment'),...devices.filter(d=>d.facing==='user')]
+  if(ordered.length>1){
+    const track=cameraStream&&cameraStream.getVideoTracks()[0]
+    const activeId=(lens.value)||(track&&track.getSettings&&track.getSettings().deviceId)||''
+    let i=ordered.findIndex(d=>d.id===activeId)
+    const next=ordered[(i+1)%ordered.length]
+    facing.value=next.facing
+    await refreshLenses()
+    lens.value=next.id
+  }else{
+    facing.value=facing.value==='environment'?'user':'environment'
+    lens.value=''
+  }
+  sendPhoneInfo()
+  if(cameraStream)await startCamera()
+}
+function setMuted(muted){
+  micMuted=muted
+  const t=cameraStream&&cameraStream.getAudioTracks()[0];if(t)t.enabled=!muted
+  muteButton.textContent=muted?'Unmute':'Mute';micStatus.textContent=muted?'Muted':'Connected'
+  if(muted)micMeter.style.width='0%'
+  sendMediaInfo()
+}
+
+connectButton.onclick=connect
+startButton.onclick=()=>startCamera()
+stopButton.onclick=stopCamera
+switchButton.onclick=switchCamera
+facing.onchange=async()=>{lens.value='';await refreshLenses();sendPhoneInfo();if(cameraStream)startCamera()}
+lens.onchange=()=>{sendPhoneInfo();if(cameraStream)startCamera()}
+resolution.onchange=()=>{if(cameraStream)startCamera()}
+fps.onchange=()=>{if(cameraStream)startCamera()}
+orientation.onchange=()=>applyProcessing()
+background.onchange=()=>applyProcessing()
+mirror.onchange=()=>applyProcessing()
+codec.onchange=()=>{try{localStorage.setItem('bipcam.codec',codec.value)}catch{};if(cameraStream){resetPeer();startCamera()}}
+muteButton.onclick=()=>setMuted(!micMuted)
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22000.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>x64</Platforms>
+    <EnableComHosting>true</EnableComHosting>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <AssemblyName>BipCamVirtualCameraSource</AssemblyName>
+    <RootNamespace>BipCam.VirtualCamera.Source</RootNamespace>
+    <ComVisible>true</ComVisible>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="DirectNCore" Version="1.18.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\shared\Protocol.cs" Link="Protocol.cs" />
+  </ItemGroup>
+</Project>

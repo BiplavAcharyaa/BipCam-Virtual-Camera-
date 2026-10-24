@@ -1,0 +1,55 @@
+{
+  "name": "bipcam",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LAN wireless Android webcam for Windows using Electron and WebRTC",
+  "main": "apps/desktop/dist/main/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n RENDERER,MAIN,ELECTRON -c blue,green,magenta \"npm:dev:renderer\" \"npm:dev:main\" \"npm:dev:electron\"",
+    "dev:desktop": "vite --config apps/desktop/vite.main.config.ts --host 127.0.0.1",
+    "dev:web": "vite --config apps/desktop/vite.renderer.config.ts --host 127.0.0.1",
+    "build": "npm run build:main && npm run build:renderer && npm run build:mobile",
+    "build:main": "vite build --config apps/desktop/vite.main.config.ts",
+    "build:renderer": "vite build --config apps/desktop/vite.renderer.config.ts",
+    "build:mobile": "vite build --config apps/mobile-web/vite.config.ts",
+    "package": "npm run build && npm run build:vcam && electron-builder --config electron-builder.yml",
+    "typecheck": "tsc --noEmit",
+    "generate:cert": "node scripts/generate-cert.mjs",
+    "dev:renderer": "vite --config apps/desktop/vite.renderer.config.ts --host 127.0.0.1",
+    "dev:main": "vite build --config apps/desktop/vite.main.config.ts --watch",
+    "dev:electron": "wait-on apps/desktop/dist/main/main.js apps/desktop/dist/main/preload.js tcp:5173 && electron .",
+    "postinstall": "node scripts/copy-mediapipe.mjs",
+    "build:vcam": "node scripts/build-vcam.mjs",
+    "clean:vcam": "node scripts/clean-vcam.mjs",
+    "predev": "node scripts/ensure-vcam.mjs",
+    "vcam:register": "node scripts/register-vcam.mjs",
+    "vcam:unregister": "node scripts/register-vcam.mjs --unregister"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
+    "electron": "^38.1.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.4",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/ws": "^8.18.0",
+    "@types/qrcode": "^1.5.5"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "ws": "^8.18.0",
+    "selfsigned": "^2.4.1",
+    "@mediapipe/selfie_segmentation": "^0.1.1675465747"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "commonjs"
+}
